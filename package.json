@@ -1,0 +1,22 @@
+{
+  "name": "google-calendar-week",
+  "version": "0.0.1",
+  "private": true,
+  "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/dkunin/google-calendar-week.git"
+  },
+  "bugs": {
+    "url": "https://github.com/dkunin/google-calendar-week/issues"
+  },
+  "homepage": "https://github.com/dkunin/google-calendar-week",
+  "keywords": [],
+  "license": "MIT",
+  "description": "**DRAFT STAGE**",
+  "dependencies": {
+    "fecha": "2.3.0",
+    "google-auth-library": "0.9.8",
+    "googleapis": "13.0.0"
+  }
+}
