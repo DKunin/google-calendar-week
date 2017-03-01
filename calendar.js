@@ -52,7 +52,8 @@ module.exports = function authorize() {
         var oauth2Client = new auth.OAuth2(clientId, clientSecret, redirectUrl);
         fs.readFile(TOKEN_PATH, function(err, token) {
             if (err) {
-                getNewToken(oauth2Client, resolve);
+                //getNewToken(oauth2Client, resolve);
+                resolve({ error: 'Authorization needed '});
             } else {
                 oauth2Client.credentials = JSON.parse(token);
                 resolve(oauth2Client);
