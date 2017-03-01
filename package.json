@@ -15,6 +15,7 @@
   "license": "MIT",
   "description": "**DRAFT STAGE**",
   "dependencies": {
+    "express": "4.14.1",
     "fecha": "2.3.0",
     "google-auth-library": "0.9.8",
     "googleapis": "13.0.0"

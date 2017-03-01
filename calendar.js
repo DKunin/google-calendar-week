@@ -1,14 +1,12 @@
 #!/usr/local/bin/node
-var fs = require('fs');
-var readline = require('readline');
-var googleAuth = require('google-auth-library');
 
-var SCOPES = [ 'https://www.googleapis.com/auth/calendar.readonly' ];
-var TOKEN_DIR = (process.env.HOME || process.env.HOMEPATH ||
-    process.env.USERPROFILE) +
-    '/.credentials/';
-var TOKEN_PATH = TOKEN_DIR + 'calendar-nodejs-quickstart.json';
-var credentials = JSON.parse(fs.readFileSync('./client_secret.json').toString());
+const fs = require('fs');
+const readline = require('readline');
+const googleAuth = require('google-auth-library');
+const SCOPES = [ 'https://www.googleapis.com/auth/calendar.readonly' ];
+const TOKEN_DIR = process.env.HOME + '/.credentials/';
+const TOKEN_PATH = TOKEN_DIR + 'my-calendar.json';
+const credentials = JSON.parse(fs.readFileSync('./client_secret.json').toString());
 
 function getNewToken(oauth2Client, callback) {
     var authUrl = oauth2Client.generateAuthUrl({
@@ -34,11 +32,6 @@ function getNewToken(oauth2Client, callback) {
     });
 }
 
-/**
- * Store token to disk be used in later program executions.
- *
- * @param {Object} token The token to store to disk.
- */
 function storeToken(token) {
     try {
         fs.mkdirSync(TOKEN_DIR);
@@ -57,16 +50,13 @@ module.exports = function authorize() {
         var redirectUrl = credentials.web.redirect_uris[0];
         var auth = new googleAuth();
         var oauth2Client = new auth.OAuth2(clientId, clientSecret, redirectUrl);
-        oauth2Client.credentials = JSON.parse(fs.readFileSync(TOKEN_PATH).toString());
-        resolve(oauth2Client);
+        fs.readFile(TOKEN_PATH, function(err, token) {
+            if (err) {
+                getNewToken(oauth2Client, resolve);
+            } else {
+                oauth2Client.credentials = JSON.parse(token);
+                resolve(oauth2Client);
+            }
+        });
     });
-
-    // fs.readFile(TOKEN_PATH, function(err, token) {
-    //     if (err) {
-    //         getNewToken(oauth2Client, callback);
-    //     } else {
-    //         oauth2Client.credentials = JSON.parse(token);
-    //         callback(oauth2Client);
-    //     }
-    // });
 }
