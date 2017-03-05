@@ -1,12 +1,13 @@
 #!/usr/local/bin/node
-
 const fs = require('fs');
 const readline = require('readline');
 const googleAuth = require('google-auth-library');
 const SCOPES = [ 'https://www.googleapis.com/auth/calendar.readonly' ];
-const TOKEN_DIR = process.env.HOME + '/.credentials/';
-const TOKEN_PATH = TOKEN_DIR + 'my-calendar.json';
-const credentials = JSON.parse(fs.readFileSync('./client_secret.json').toString());
+const TOKEN_DIR = '.credentials/';
+const TOKEN_PATH = TOKEN_DIR + 'calendar.json';
+const credentials = JSON.parse(
+    fs.readFileSync(TOKEN_DIR + 'client_secret.json').toString()
+);
 
 function getNewToken(oauth2Client, callback) {
     var authUrl = oauth2Client.generateAuthUrl({
@@ -43,21 +44,26 @@ function storeToken(token) {
     fs.writeFile(TOKEN_PATH, JSON.stringify(token));
 }
 
-module.exports = function authorize() {
-    return new Promise(function(resolve, reject){
-        var clientSecret = credentials.web.client_secret;
-        var clientId = credentials.web.client_id;
-        var redirectUrl = credentials.web.redirect_uris[0];
-        var auth = new googleAuth();
-        var oauth2Client = new auth.OAuth2(clientId, clientSecret, redirectUrl);
+module.exports = function authorize(firstTime) {
+    var clientSecret = credentials.web.client_secret;
+    var clientId = credentials.web.client_id;
+    var redirectUrl = credentials.web.redirect_uris[0];
+    var auth = new googleAuth();
+    var oauth2Client = new auth.OAuth2(clientId, clientSecret, redirectUrl);
+
+    if (firstTime) {
+        return new Promise(function(resolve) {
+            getNewToken(oauth2Client, resolve);
+        });
+    }
+    return new Promise(function(resolve) {
         fs.readFile(TOKEN_PATH, function(err, token) {
             if (err) {
-                //getNewToken(oauth2Client, resolve);
-                resolve({ error: 'Authorization needed '});
+                resolve({ error: 'Authorization needed ' });
             } else {
                 oauth2Client.credentials = JSON.parse(token);
                 resolve(oauth2Client);
             }
         });
     });
-}
+};
