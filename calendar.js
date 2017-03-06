@@ -1,4 +1,5 @@
 #!/usr/local/bin/node
+
 const fs = require('fs');
 const readline = require('readline');
 const googleAuth = require('google-auth-library');
