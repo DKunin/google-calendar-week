@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Week">
+    <meta name="author" content="Dmitri Kunin">
+    <title>Week</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/5.0.0/normalize.min.css">
+    <link rel="stylesheet" href="https://npmcdn.com/tachyons@4.6.1/css/tachyons.min.css">
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/vue/2.1.10/vue.min.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/vue-resource/1.2.0/vue-resource.min.js"></script>
+    <style>
+        body {
+            font-family: Helvetica;
+        }
+        .week-holder {
+            display: flex;
+            flex-wrap: nowrap;
+        }
+        .week-day {
+            width: calc(100% / 7);
+        }
+    </style>
+  </head>
+  <body class="pa2">
+    <div id="app"></div>
+    <script type="text/template" class="viewList">
+      <div class="week-holder">
+        <div v-for="day in days" class="week-day">
+            <h4>{{day.weekDay}}</h4>
+            <div v-if="!day.events.length" class="gray">Нет событий</div>
+            <div v-for="event in day.events">
+                <a target="_blank" class="link black hover-dark-red" :href="event.htmlLink">
+                    <span class="bold dark-red b">{{displayTime(event.start.dateTime)}}</span> {{event.summary}}
+                </a>
+            </div>
+        </div>
+      </div>
+    </script>
+
+    <script type="text/javascript">
+        let lastUpdate = Date.now();
+        const WEEK_DAYS = ['Воскресенье', 'Понедельник', 'Вторник', 'Среда', 'Четрвег', 'Пятница', 'Суббота'];
+        const PATH = 'http://localhost:5252/api/week';
+        
+        document.addEventListener('DOMContentLoaded', function () {
+            const vueSettings = {
+                el: '#app',
+                template: document.querySelector('.viewList').innerHTML,
+                data: {
+                    events: [],
+                    days: []
+                },
+                methods: {
+                    displayTime: function(date) {
+                        const day = new Date(date);
+                        const minutes = day.getMinutes();
+                        return `${day.getHours()}:${minutes === 0 ? '00' : minutes}`;
+                    },
+                    getDaysEvents: function(date){
+                        const morning = new Date(date);
+                        const evening = new Date(date);
+                        evening.setHours(23, 59, 59);
+                        const selectedEvents = this.events.filter(singleEvent => {
+                            const eventTime = new Date(singleEvent.start.dateTime);
+                            return morning < eventTime && evening > eventTime;
+                        });
+                        return selectedEvents;
+                    },
+                    updateData: function() {
+                        this.$http
+                            .get(PATH)
+                            .then(
+                                response => {
+                                    this.events = response.body.items;
+                                    this.days = response.body.days.map(singleDay => {
+                                        const date = new Date(singleDay);
+                                        return {
+                                            date,
+                                            events: this.getDaysEvents(date),
+                                            weekDay: WEEK_DAYS[date.getDay()]
+                                        }
+                                    });
+                                    console.log(this.days);
+                                },
+                                response => {}
+                            );
+                    }
+                },
+                mounted: function() {
+                    this.updateData();
+                }
+            };
+            const app = new Vue(vueSettings);
+        });
+    </script>
+  </body>
+</html>

@@ -1,7 +1,7 @@
 {
   "name": "google-calendar-week",
-  "version": "0.0.1",
-  "private": true,
+  "version": "0.1.0",
+  "private": false,
   "main": "index.js",
   "repository": {
     "type": "git",
@@ -11,14 +11,19 @@
     "url": "https://github.com/dkunin/google-calendar-week/issues"
   },
   "scripts": {
-    "pretty": "prettier --single-quote --tab-width 4 --write ./*.js"
+    "pretty": "prettier --single-quote --tab-width 4 --write ./*.js ./lib/*.js",
+    "prestart": "mkdir .credentials",
+    "start": "node ./",
+    "clear": "rm -rf ./.credentials/*",
+    "dev": "nodemon ./"
   },
   "homepage": "https://github.com/dkunin/google-calendar-week",
   "keywords": [],
   "license": "MIT",
-  "description": "**DRAFT STAGE**",
+  "description": "",
   "dependencies": {
     "express": "4.14.1",
+    "express-fileupload": "0.1.1",
     "fecha": "2.3.0",
     "google-auth-library": "0.9.8",
     "googleapis": "13.0.0"

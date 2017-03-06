@@ -1,6 +1,7 @@
 {
     "extends": "eslint:recommended",
     "rules": {
+        "no-console": false,
         "valid-jsdoc": 2,
         "no-underscore-dangle": 2,
         "no-empty": [

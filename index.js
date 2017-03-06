@@ -1,103 +1,85 @@
 'use strict';
-const google = require('googleapis');
+const fs = require('fs');
 const express = require('express');
-const authFunction = require('./calendar');
+
+const authModule = require('./lib/calendar-auth');
+const cors = require('./lib/cors');
+const { listWeekEvents, listCalendars } = require(
+    './lib/google-calendar-functions'
+);
+
+const fileUpload = require('express-fileupload');
 const app = express();
 const PORT = 5252;
-const { CALENDAR_ID } = process.env;
+let auth = null;
+
+app.use(fileUpload());
+app.use(express.static('public'));
+app.use(cors);
 
 app.use(function(req, res, next) {
-    res.header('Access-Control-Allow-Origin', '*');
-    res.header(
-        'Access-Control-Allow-Headers',
-        'Origin, X-Requested-With, Content-Type, Accept'
-    );
+    if (req.method === 'POST' || req.path === '/api/auth') {
+        next();
+        return;
+    }
+
+    if (req.headers.referer && req.headers.referer.includes('code')) {
+        const code = req.headers.referer.split('code=')[1];
+        authModule.acceptToken(code).then(function(newAuth) {
+            res.redirect('/?new=true');
+        });
+        return;
+    }
+
+    if (!auth) {
+        authModule
+            .authorize()
+            .then(authObj => {
+                auth = authObj;
+                next();
+            })
+            .catch(error => {
+                const form = `<form ref="uploadForm" id="uploadForm" method="post" action="/api/client_auth" enctype="multipart/form-data">
+                        <input type="file" name="clientFile" />
+                        <button type="submit">Load client.js</button>
+                    </form>`;
+                res.send(
+                    `
+                    <a href="/api/auth">Get Access Code</a>
+                    ${form}
+                `
+                );
+            });
+        return;
+    }
     next();
 });
 
-let auth = {};
-
-authFunction().then(authObj => {
-    auth = authObj;
-});
-
-function getMonday(d) {
-    var day = d.getDay();
-    if (day === 1) {
-        d.setHours(0, 0, 0);
-        return d;
-    }
-    var diff = d.getDate() - day + (day == 0 ? -6 : 1);
-    const monday = new Date(d.setDate(diff));
-    monday.setHours(0, 0, 0);
-    return monday;
-}
-
-function getSunday(d) {
-    const monday = getMonday(d);
-    var diff = monday.getDate() + 6;
-    const sunday = new Date(d.setDate(diff));
-    sunday.setHours(23, 55, 55);
-    return sunday;
-}
-
-function getWeekDates(monday) {
-    return Array(7).fill(1).reduce(function(newArray, singleItem, index) {
-        const mondayClone = new Date(monday);
-        var diff = mondayClone.getDate() + index;
-        return newArray.concat(new Date(mondayClone.setDate(diff)));
-    }, []);
-}
-
-function listWeekEvents(date) {
-    const originalMonday = date ? new Date(date) : new Date();
-    const monday = getMonday(originalMonday).toISOString();
-    const sunday = getSunday(originalMonday).toISOString();
-    const weekDays = getWeekDates(getMonday(originalMonday));
-    return new Promise((resolve, reject) => {
-        google.calendar(
-            'v3'
-        ).events.list({ auth: auth, calendarId: CALENDAR_ID, timeMin: monday, timeMax: sunday, singleEvents: true, showHiddenInvitations: true, orderBy: 'startTime' }, function(err, response) {
-            if (err) {
-                reject(err);
-                return;
-            }
-            resolve({ items: response.items, days: weekDays });
-        });
-    });
-}
-
-function listCalendars() {
-    return new Promise((resolve, reject) => {
-        google.calendar(
-            'v3'
-        ).calendarList.list({ auth: auth }, function(err, response) {
-            if (err) {
-                reject(err);
-                return;
-            }
-            resolve(response);
-        });
-    });
-}
-
 app.get('/api/week', function(req, res) {
-    listWeekEvents(req.query.date).then(result => {
+    listWeekEvents(auth, req.query.date).then(result => {
         res.json(result);
     });
 });
 
 app.get('/api/calendars', function(req, res) {
-    listCalendars().then(result => {
+    listCalendars(auth).then(result => {
         res.json(result);
     });
 });
 
 app.get('/api/auth', function(req, res) {
-    authFunction(true).then(authObj => {
-        res.json(authObj);
-        auth = authObj;
-    });
+    res.send(`<a href="${authModule.getTokenAuthPath()}">Get Approved</a>`);
+});
+
+app.post('/api/client_auth', function(req, res, next) {
+    authModule
+        .saveClientSecret(req.files.clientFile.data.toString())
+        .then(function() {
+            res.redirect('/api/auth');
+        })
+        .catch(function(err) {
+            res.send(err);
+        });
 });
 
 app.listen(PORT);
