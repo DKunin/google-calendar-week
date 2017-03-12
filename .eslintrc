@@ -1,7 +1,7 @@
 {
     "extends": "eslint:recommended",
     "rules": {
-        "no-console": false,
+        "no-console": 0,
         "valid-jsdoc": 2,
         "no-underscore-dangle": 2,
         "no-empty": [
@@ -17,12 +17,6 @@
             }
         ],
         "no-with": 2,
-        "brace-style": [
-            2,
-            "stroustrup", {
-                "allowSingleLine": true
-            }
-        ],
         "no-mixed-spaces-and-tabs": 2,
         "no-multiple-empty-lines": 2,
         "no-multi-str": 2,

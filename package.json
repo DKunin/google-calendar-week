@@ -12,7 +12,7 @@
   },
   "scripts": {
     "pretty": "prettier --single-quote --tab-width 4 --write ./*.js ./lib/*.js",
-    "prestart": "mkdir .credentials",
+    "prestart": "mkdir -p .credentials",
     "start": "node ./",
     "clear": "rm -rf ./.credentials/*",
     "dev": "nodemon ./"

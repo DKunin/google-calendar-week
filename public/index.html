@@ -27,29 +27,39 @@
   <body class="pa2">
     <div id="app"></div>
     <script type="text/template" class="viewList">
-      <div class="week-holder">
-        <div v-for="day in days" class="week-day">
-            <h4>{{day.weekDay}}</h4>
-            <div v-if="!day.events.length" class="gray">Нет событий</div>
-            <div v-for="event in day.events">
-                <a target="_blank" class="link black hover-dark-red" :href="event.htmlLink">
-                    <span class="bold dark-red b">{{displayTime(event.start.dateTime)}}</span> {{event.summary}}
-                </a>
+      <div>
+            <div v-if="error">
+                <h3>{{error}}</h3>
+                <form ref="uploadForm" id="uploadForm" method="post" action="/api/client_auth" enctype="multipart/form-data">
+                    <input type="file" name="clientFile" />
+                    <button type="submit">Load client.js</button>
+                </form>
             </div>
-        </div>
+            <div class="week-holder">
+                <div v-for="day in days" class="week-day">
+                    <h4>{{day.weekDay}}</h4>
+                    <div v-if="!day.events.length" class="gray">Нет событий</div>
+                    <div v-for="event in day.events">
+                        <a target="_blank" class="link black hover-dark-red" :href="event.htmlLink">
+                            <span class="bold dark-red b">{{displayTime(event.start.dateTime)}}</span> {{event.summary}}
+                        </a>
+                    </div>
+                </div>
+            </div>
       </div>
     </script>
 
     <script type="text/javascript">
         let lastUpdate = Date.now();
         const WEEK_DAYS = ['Воскресенье', 'Понедельник', 'Вторник', 'Среда', 'Четрвег', 'Пятница', 'Суббота'];
-        const PATH = 'http://localhost:5252/api/week';
+        const PATH = '/api/week';
         
         document.addEventListener('DOMContentLoaded', function () {
             const vueSettings = {
                 el: '#app',
                 template: document.querySelector('.viewList').innerHTML,
                 data: {
+                    error: null,
                     events: [],
                     days: []
                 },
@@ -75,6 +85,7 @@
                             .then(
                                 response => {
                                     this.events = response.body.items;
+                                    this.error = null;
                                     this.days = response.body.days.map(singleDay => {
                                         const date = new Date(singleDay);
                                         return {
@@ -83,9 +94,10 @@
                                             weekDay: WEEK_DAYS[date.getDay()]
                                         }
                                     });
-                                    console.log(this.days);
                                 },
-                                response => {}
+                                response => {
+                                    this.error = response.statusText;
+                                }
                             );
                     }
                 },
@@ -95,6 +107,9 @@
             };
             const app = new Vue(vueSettings);
         });
+        if (location.search.includes('code')) {
+            location.href = '/';
+        }
     </script>
   </body>
 </html>

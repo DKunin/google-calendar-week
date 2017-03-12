@@ -1,5 +1,4 @@
 'use strict';
-const fs = require('fs');
 const express = require('express');
 
 const authModule = require('./lib/calendar-auth');
@@ -26,7 +25,8 @@ app.use(function(req, res, next) {
     if (req.headers.referer && req.headers.referer.includes('code')) {
         const code = req.headers.referer.split('code=')[1];
         authModule.acceptToken(code).then(function(newAuth) {
-            res.redirect('/?new=true');
+            auth = newAuth;
+            next();
         });
         return;
     }
@@ -38,17 +38,9 @@ app.use(function(req, res, next) {
                 auth = authObj;
                 next();
             })
-            .catch(error => {
-                const form = `<form ref="uploadForm" id="uploadForm" method="post" action="/api/client_auth" enctype="multipart/form-data">
-                        <input type="file" name="clientFile" />
-                        <button type="submit">Load client.js</button>
-                    </form>`;
-                res.send(
-                    `
-                    <a href="/api/auth">Get Access Code</a>
-                    ${form}
-                `
-                );
+            .catch(() => {
+                res.status(403);
+                res.send('Forbidden');
             });
         return;
     }
@@ -67,11 +59,17 @@ app.get('/api/calendars', function(req, res) {
     });
 });
 
+app.get('/api/clear', function(req, res) {
+    authModule.resetClientSecret().then(function() {
+        res.redirect('/api/auth');
+    });
+});
+
 app.get('/api/auth', function(req, res) {
     res.send(`<a href="${authModule.getTokenAuthPath()}">Get Approved</a>`);
 });
 
-app.post('/api/client_auth', function(req, res, next) {
+app.post('/api/client_auth', function(req, res) {
     authModule
         .saveClientSecret(req.files.clientFile.data.toString())
         .then(function() {

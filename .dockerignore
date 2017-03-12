@@ -1,0 +1,3 @@
+.credentials
+
+docker run -p 5252:5252 -e JIRA_PASS=$JIRA_PASS -e STASH_HOST=$STASH_HOST -d $(whoami)/$(basename $PWD)
