@@ -12,22 +12,46 @@
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/vue/2.1.10/vue.min.js"></script>
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/vue-resource/1.2.0/vue-resource.min.js"></script>
     <style>
-        body {
+        body, html {
             font-family: Helvetica;
+            height: 100%;
         }
         .week-holder {
             display: flex;
             flex-wrap: nowrap;
+            align-items: stretch;
+            align-content: stretch;
+            height: 100%;
         }
         .week-day {
             width: calc(100% / 7);
+            box-shadow: 7px -1px 20px 0px rgba(0,0,0,.1);
+            padding-left: 25px;
+            opacity: .7;
+        }
+        .week-day:hover {
+            opacity: 1;
+        }
+
+        .current-week-day {
+            box-shadow: 11px 0px 20px 0px rgba(0,0,0,.2);
+            opacity: 1;
+        }
+        .sinlge-event {
+            padding: 5px 0;
+        }
+        .holder {
+            height: 100%;
+        }
+        .current-day {
+            color: #e7040f;
         }
     </style>
   </head>
-  <body class="pa2">
+  <body>
     <div id="app"></div>
     <script type="text/template" class="viewList">
-      <div>
+      <div class="holder">
             <div v-if="error">
                 <h3>{{error}}</h3>
                 <form ref="uploadForm" id="uploadForm" method="post" action="/api/client_auth" enctype="multipart/form-data">
@@ -36,10 +60,11 @@
                 </form>
             </div>
             <div class="week-holder">
-                <div v-for="day in days" class="week-day">
-                    <h4>{{day.weekDay}}</h4>
+                <div v-for="day in days" :class="'week-day pa2 ' + (day.currentDay ? 'current-week-day' : '')">
+                    <h2 :class="day.currentDay ? 'current-day' : ''">{{day.dateNumber}}</h2>
+                    <h4 :class="day.currentDay ? 'current-day' : ''">{{day.weekDay}}</h4>
                     <div v-if="!day.events.length" class="gray">Нет событий</div>
-                    <div v-for="event in day.events">
+                    <div v-for="event in day.events" class="sinlge-event">
                         <a target="_blank" class="link black hover-dark-red" :href="event.htmlLink">
                             <span class="bold dark-red b">{{displayTime(event.start.dateTime)}}</span> {{event.summary}}
                         </a>
@@ -50,10 +75,9 @@
     </script>
 
     <script type="text/javascript">
-        let lastUpdate = Date.now();
-        const WEEK_DAYS = ['Воскресенье', 'Понедельник', 'Вторник', 'Среда', 'Четрвег', 'Пятница', 'Суббота'];
+        const WEEK_DAYS = [ 'Воскресенье', 'Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота' ];
         const PATH = '/api/week';
-        
+
         document.addEventListener('DOMContentLoaded', function () {
             const vueSettings = {
                 el: '#app',
@@ -69,7 +93,7 @@
                         const minutes = day.getMinutes();
                         return `${day.getHours()}:${minutes === 0 ? '00' : minutes}`;
                     },
-                    getDaysEvents: function(date){
+                    getDaysEvents: function(date) {
                         const morning = new Date(date);
                         const evening = new Date(date);
                         evening.setHours(23, 59, 59);
@@ -90,9 +114,11 @@
                                         const date = new Date(singleDay);
                                         return {
                                             date,
+                                            dateNumber: date.getDate(),
+                                            currentDay: date.getDay() === new Date().getDay(),
                                             events: this.getDaysEvents(date),
                                             weekDay: WEEK_DAYS[date.getDay()]
-                                        }
+                                        };
                                     });
                                 },
                                 response => {
@@ -105,7 +131,7 @@
                     this.updateData();
                 }
             };
-            const app = new Vue(vueSettings);
+            new Vue(vueSettings);
         });
         if (location.search.includes('code')) {
             location.href = '/';
