@@ -25,18 +25,22 @@
         }
         .week-day {
             width: calc(100% / 7);
-            box-shadow: 7px -1px 20px 0px rgba(0,0,0,.1);
+            box-shadow: 10px 0px 20px 0px rgba(0,0,0,.1);
             padding-left: 25px;
             opacity: .7;
         }
+
         .week-day:hover {
             opacity: 1;
         }
-
+        .week-day.past-week-day {
+            box-shadow: -10px 0px 20px 0px rgba(0,0,0,.1);
+        }
         .current-week-day {
-            box-shadow: 11px 0px 20px 0px rgba(0,0,0,.2);
+            box-shadow: 10px 0px 20px 0px rgba(0,0,0,.1), -10px 0px 20px 0px rgba(0,0,0,.1);
             opacity: 1;
         }
+
         .sinlge-event {
             padding: 5px 0;
         }
@@ -60,7 +64,7 @@
                 </form>
             </div>
             <div class="week-holder">
-                <div v-for="day in days" :class="'week-day pa2 ' + (day.currentDay ? 'current-week-day' : '')">
+                <div v-for="day in days" :class="'week-day pa2 ' + (day.currentDay ? 'current-week-day' : '') + (day.pastDay ? 'past-week-day' : '')">
                     <h2 :class="day.currentDay ? 'current-day' : ''">{{day.dateNumber}}</h2>
                     <h4 :class="day.currentDay ? 'current-day' : ''">{{day.weekDay}}</h4>
                     <div v-if="!day.events.length" class="gray">Нет событий</div>
@@ -112,10 +116,12 @@
                                     this.error = null;
                                     this.days = response.body.days.map(singleDay => {
                                         const date = new Date(singleDay);
+                                        const todayDay = new Date().getDay();
                                         return {
                                             date,
                                             dateNumber: date.getDate(),
-                                            currentDay: date.getDay() === new Date().getDay(),
+                                            currentDay: date.getDay() === todayDay,
+                                            pastDay: date.getDay() < todayDay && date.getDay() !== 0,
                                             events: this.getDaysEvents(date),
                                             weekDay: WEEK_DAYS[date.getDay()]
                                         };
